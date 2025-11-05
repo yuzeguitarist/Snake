@@ -198,6 +198,7 @@ class SnakeGame {
     startGame() {
         this.gameState = 'playing';
         this.score = 0;
+        this.gameSpeed = 100; // Reset to initial speed
         this.direction = { x: 1, y: 0 };
         this.nextDirection = { x: 1, y: 0 };
 
