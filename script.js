@@ -198,7 +198,7 @@ class SnakeGame {
     startGame() {
         this.gameState = 'playing';
         this.score = 0;
-        this.gameSpeed = this.isMobile ? 120 : 180; // 重置初始速度
+        this.gameSpeed = this.isMobile ? 100 : 150; // 重置初始速度
         this.direction = { x: 1, y: 0 };
         this.nextDirection = { x: 1, y: 0 };
 
