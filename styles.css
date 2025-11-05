@@ -9,7 +9,7 @@
     --bg-canvas: #272823;
     --text-primary: #1d1d1f;
     --text-secondary: #86868b;
-    --button-color: #4a90e2;
+    --button-color: #BA6832;
     --snake-color: #82A37E;
     --food-color: #BA6832;
     --border-color: rgba(0, 0, 0, 0.1);
@@ -25,7 +25,7 @@
         --bg-canvas: #0a0a0a;
         --text-primary: #f5f5f7;
         --text-secondary: #86868b;
-        --button-color: #0a84ff;
+        --button-color: #ff6b35;
         --snake-color: #30d158;
         --food-color: #ff453a;
         --border-color: rgba(255, 255, 255, 0.1);
@@ -40,10 +40,20 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+    overscroll-behavior: none;
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: "SimSun", "FangSong", "STSong", "宋体", "仿宋", serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background: var(--bg-primary);
     color: var(--text-primary);
     min-height: 100vh;
@@ -54,7 +64,10 @@ body {
     transition: background-color 0.3s ease, color 0.3s ease;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    overflow-x: hidden;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
 .container {
@@ -98,6 +111,7 @@ body {
     font-weight: 700;
     letter-spacing: -1px;
     color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 /* Game Wrapper */
@@ -107,6 +121,7 @@ body {
     aspect-ratio: 1;
     max-width: 600px;
     margin: 0 auto;
+    touch-action: none;
 }
 
 /* Canvas */
@@ -118,6 +133,10 @@ body {
     box-shadow: var(--shadow-md);
     border: 1px solid var(--border-color);
     transition: none !important;
+    touch-action: none;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
 }
 
 /* Game Overlay */
@@ -175,12 +194,13 @@ body {
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
-    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+    box-shadow: 0 4px 12px rgba(186, 104, 50, 0.3);
+    touch-action: manipulation;
 }
 
 .start-button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(74, 144, 226, 0.4);
+    box-shadow: 0 6px 16px rgba(186, 104, 50, 0.4);
     filter: brightness(1.1);
 }
 
@@ -303,4 +323,11 @@ button,
 
 #gameCanvas {
     transition: none !important;
+}
+
+/* 禁用双击缩放和滚动 */
+* {
+    -webkit-touch-callout: none;
+    -webkit-text-size-adjust: none;
+    -webkit-user-drag: none;
 }
