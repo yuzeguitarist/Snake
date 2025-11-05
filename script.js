@@ -338,7 +338,7 @@ class SnakeGame {
             if (side === 0) {
                 return Math.random() < 0.5 ? 2 : this.tileCount - 3;
             } else {
-                return Math.random() < 0.5 ? 1 : this.tileCount - 2;
+                return Math.random() < 0.5 ? 2 : this.tileCount - 3;
             }
         }
         
