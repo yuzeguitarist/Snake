@@ -414,14 +414,27 @@ h1 {
     animation: fadeIn 0.5s ease;
 }
 
-/* Smooth transitions for theme change */
-* {
+/* Smooth transitions for theme change - targeted elements only */
+body,
+header,
+h1,
+h2,
+p,
+button,
+.theme-toggle,
+.score-container,
+.high-score-container,
+.control-item,
+.game-overlay,
+.overlay-content,
+.start-button,
+.key {
     transition-property: background-color, border-color, color;
     transition-duration: 0.3s;
     transition-timing-function: ease;
 }
 
-/* Remove transitions for canvas to avoid flicker */
+/* Explicitly disable transitions for canvas to ensure optimal rendering */
 #gameCanvas {
-    transition-property: box-shadow, border-color;
+    transition: none !important;
 }

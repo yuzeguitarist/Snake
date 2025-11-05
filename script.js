@@ -271,8 +271,8 @@ class SnakeGame {
             return;
         }
 
-        // Check self collision
-        if (this.snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+        // Check self collision (excluding tail since it will be removed if no food is eaten)
+        if (this.snake.slice(0, -1).some(segment => segment.x === head.x && segment.y === head.y)) {
             this.gameOver();
             return;
         }
