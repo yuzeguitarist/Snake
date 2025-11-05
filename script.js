@@ -30,7 +30,6 @@ class SnakeGame {
         this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         this.gameSpeed = this.isMobile ? 120 : 180; // PC端速度更慢
         this.lastFrameTime = 0;
-        this.lastDrawTime = 0;
 
         // Touch controls
         this.touchStartX = 0;
