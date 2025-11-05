@@ -1,0 +1,427 @@
+/* ========================================
+   Apple-Style Minimalist Snake Game
+   ======================================== */
+
+/* CSS Variables for Theme */
+:root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f7;
+    --bg-canvas: #fafafa;
+    --text-primary: #1d1d1f;
+    --text-secondary: #86868b;
+    --accent-color: #30d158;
+    --snake-color: #1d1d1f;
+    --food-color: #30d158;
+    --grid-color: rgba(0, 0, 0, 0.03);
+    --border-color: rgba(0, 0, 0, 0.06);
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="dark"] {
+    --bg-primary: #000000;
+    --bg-secondary: #1c1c1e;
+    --bg-canvas: #141414;
+    --text-primary: #f5f5f7;
+    --text-secondary: #86868b;
+    --accent-color: #32d74b;
+    --snake-color: #f5f5f7;
+    --food-color: #32d74b;
+    --grid-color: rgba(255, 255, 255, 0.03);
+    --border-color: rgba(255, 255, 255, 0.08);
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+/* Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+}
+
+.container {
+    width: 100%;
+    max-width: 600px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* Header */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 4px;
+}
+
+h1 {
+    font-size: 34px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+/* Theme Toggle */
+.theme-toggle {
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: 50%;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.theme-toggle:hover {
+    transform: scale(1.05);
+    box-shadow: var(--shadow-sm);
+}
+
+.theme-toggle:active {
+    transform: scale(0.95);
+}
+
+.sun-icon,
+.moon-icon {
+    position: absolute;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+[data-theme="light"] .sun-icon {
+    opacity: 1;
+    transform: rotate(0deg);
+}
+
+[data-theme="light"] .moon-icon {
+    opacity: 0;
+    transform: rotate(90deg);
+}
+
+[data-theme="dark"] .sun-icon {
+    opacity: 0;
+    transform: rotate(-90deg);
+}
+
+[data-theme="dark"] .moon-icon {
+    opacity: 1;
+    transform: rotate(0deg);
+}
+
+/* Game Info */
+.game-info {
+    display: flex;
+    gap: 16px;
+    padding: 0 4px;
+}
+
+.score-container,
+.high-score-container {
+    flex: 1;
+    background: var(--bg-secondary);
+    padding: 20px;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: background-color 0.3s ease;
+}
+
+.label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.score,
+.high-score {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -1px;
+    color: var(--text-primary);
+}
+
+/* Game Wrapper */
+.game-wrapper {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* Canvas */
+#gameCanvas {
+    width: 100%;
+    height: 100%;
+    background: var(--bg-canvas);
+    border-radius: 24px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+}
+
+/* Game Overlay */
+.game-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+    pointer-events: all;
+}
+
+.game-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.overlay-content {
+    text-align: center;
+    padding: 40px;
+}
+
+#overlayTitle {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: #ffffff;
+    letter-spacing: -0.5px;
+}
+
+#overlayMessage {
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 32px;
+    font-weight: 400;
+}
+
+/* Start Button */
+.start-button {
+    background: var(--accent-color);
+    color: #ffffff;
+    border: none;
+    padding: 14px 32px;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(48, 209, 88, 0.3);
+}
+
+.start-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(48, 209, 88, 0.4);
+}
+
+.start-button:active {
+    transform: translateY(0);
+}
+
+/* Controls Info */
+.controls-info {
+    display: flex;
+    gap: 12px;
+    padding: 0 4px;
+    flex-wrap: wrap;
+}
+
+.control-item {
+    flex: 1;
+    min-width: 140px;
+    background: var(--bg-secondary);
+    padding: 16px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: center;
+    transition: background-color 0.3s ease;
+}
+
+.key {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    padding: 6px 12px;
+    background: var(--bg-canvas);
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+}
+
+.description {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.mobile-only {
+    display: none;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .container {
+        gap: 20px;
+    }
+
+    h1 {
+        font-size: 28px;
+    }
+
+    .game-info {
+        gap: 12px;
+    }
+
+    .score-container,
+    .high-score-container {
+        padding: 16px;
+    }
+
+    .score,
+    .high-score {
+        font-size: 28px;
+    }
+
+    #overlayTitle {
+        font-size: 28px;
+    }
+
+    #overlayMessage {
+        font-size: 15px;
+    }
+
+    .mobile-only {
+        display: flex;
+    }
+
+    .controls-info {
+        gap: 8px;
+    }
+
+    .control-item {
+        min-width: 100px;
+        padding: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        padding: 16px;
+    }
+
+    .container {
+        gap: 16px;
+    }
+
+    h1 {
+        font-size: 24px;
+    }
+
+    .theme-toggle {
+        width: 40px;
+        height: 40px;
+    }
+
+    .score-container,
+    .high-score-container {
+        padding: 14px;
+        border-radius: 12px;
+    }
+
+    .label {
+        font-size: 12px;
+    }
+
+    .score,
+    .high-score {
+        font-size: 24px;
+    }
+
+    #gameCanvas {
+        border-radius: 20px;
+    }
+
+    .game-overlay {
+        border-radius: 20px;
+    }
+
+    .overlay-content {
+        padding: 24px;
+    }
+
+    #overlayTitle {
+        font-size: 24px;
+    }
+
+    #overlayMessage {
+        font-size: 14px;
+        margin-bottom: 24px;
+    }
+
+    .start-button {
+        padding: 12px 28px;
+        font-size: 16px;
+    }
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.container > * {
+    animation: fadeIn 0.5s ease;
+}
+
+/* Smooth transitions for theme change */
+* {
+    transition-property: background-color, border-color, color;
+    transition-duration: 0.3s;
+    transition-timing-function: ease;
+}
+
+/* Remove transitions for canvas to avoid flicker */
+#gameCanvas {
+    transition-property: box-shadow, border-color;
+}
