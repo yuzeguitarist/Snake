@@ -87,8 +87,11 @@ class SnakeGame {
         // Mystery Mode Toggle
         this.mysteryToggle.addEventListener('change', (e) => {
             this.mysteryMode = e.target.checked;
-            // 重置游戏如果正在玩
-            if (this.gameState === 'playing') {
+            // 清除特殊数字状态，防止软锁定
+            this.specialNumber = null;
+            this.specialNumberActive = false;
+            // 重置游戏如果正在玩或暂停
+            if (this.gameState === 'playing' || this.gameState === 'paused') {
                 this.gameOver();
             }
         });
@@ -306,13 +309,14 @@ class SnakeGame {
         this.snake.unshift(head);
 
         // 神秘模式：检查特殊数字碰撞
-        if (this.mysteryMode && this.specialNumber && !this.specialNumberActive) {
+        if (this.mysteryMode && this.specialNumber) {
             if (head.x === this.specialNumber.x && head.y === this.specialNumber.y) {
                 // 吃到特殊数字
                 this.score = this.specialNumber.value;
                 this.updateScoreDisplay();
-                this.specialNumberActive = true;
+                // 清除特殊数字实体和标志
                 this.specialNumber = null;
+                this.specialNumberActive = false;
                 // 不增加长度，移除尾部
                 this.snake.pop();
                 // 重新生成食物
@@ -341,24 +345,39 @@ class SnakeGame {
 
     // 检查是否需要触发特殊数字
     checkSpecialNumberTrigger() {
-        // 特殊数字触发逻辑
-        if (this.score === 10 && !this.specialNumberActive) {
+        // 如果已经有特殊数字在棋盘上，检查是否超出范围需要清除
+        if (this.specialNumberActive) {
+            // 检查是否通过吃普通食物超出了生成范围，如果是则清除特殊数字
+            const specialValue = this.specialNumber ? this.specialNumber.value : 0;
+            let shouldClear = false;
+
+            if (specialValue === 13 && this.score >= 50) {
+                shouldClear = true;
+            } else if (specialValue === 69 && this.score >= 70) {
+                shouldClear = true;
+            } else if (specialValue === 78 && this.score >= 79) {
+                shouldClear = true;
+            } else if (specialValue === 91 && this.score >= 100) {
+                shouldClear = true;
+            }
+
+            if (shouldClear) {
+                this.specialNumber = null;
+                this.specialNumberActive = false;
+            }
+            return; // 已有特殊数字时不再生成新的
+        }
+
+        // 没有特殊数字时，检查是否需要生成（只在第一次进入范围时生成）
+        if (this.score === 10) {
             this.generateSpecialNumber(13);
-        } else if (this.score >= 50 && this.score <= 68 && this.specialNumberActive) {
-            this.specialNumberActive = false;
+        } else if (this.score >= 50 && this.score < 70) {
+            // 在50-69范围内第一次吃食物时生成
             this.generateSpecialNumber(69);
-        } else if (this.score === 69) {
-            this.specialNumberActive = true;
-        } else if (this.score >= 75 && this.score <= 85 && this.specialNumberActive) {
-            this.specialNumberActive = false;
+        } else if (this.score >= 70 && this.score < 79) {
             this.generateSpecialNumber(78);
-        } else if (this.score === 78) {
-            this.specialNumberActive = true;
-        } else if (this.score >= 88 && this.score <= 98 && this.specialNumberActive) {
-            this.specialNumberActive = false;
+        } else if (this.score >= 79 && this.score < 100) {
             this.generateSpecialNumber(91);
-        } else if (this.score === 91) {
-            this.specialNumberActive = true;
         }
     }
 
@@ -385,6 +404,9 @@ class SnakeGame {
             x: position.x,
             y: position.y
         };
+
+        // 唯一设置 specialNumberActive 的地方
+        this.specialNumberActive = true;
     }
 
     generateFood() {
