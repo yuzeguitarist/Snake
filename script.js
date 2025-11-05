@@ -1,12 +1,12 @@
 // ========================================
-// Apple-Style Minimalist Snake Game
+// 贪吃蛇游戏
 // ========================================
 
 class SnakeGame {
     constructor() {
         // Canvas setup
         this.canvas = document.getElementById('gameCanvas');
-        this.ctx = this.canvas.getContext('2d');
+        this.ctx = this.canvas.getContext('2d', { alpha: false });
 
         // Game state
         this.gameState = 'idle'; // idle, playing, paused, gameover
@@ -26,8 +26,9 @@ class SnakeGame {
         this.score = 0;
         this.highScore = this.loadHighScore();
 
-        // Game speed
-        this.gameSpeed = 100; // ms per frame
+        // Game speed - 降低PC端速度
+        this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        this.gameSpeed = this.isMobile ? 120 : 180; // PC端速度更慢
         this.lastFrameTime = 0;
 
         // Touch controls
@@ -49,7 +50,6 @@ class SnakeGame {
         this.setupCanvas();
         this.setupEventListeners();
         this.updateScoreDisplay();
-        this.initTheme();
         window.requestAnimationFrame((time) => this.gameLoop(time));
     }
 
@@ -72,32 +72,8 @@ class SnakeGame {
         this.canvas.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: false });
         this.canvas.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
 
-        // Theme toggle
-        document.querySelector('.theme-toggle').addEventListener('click', () => this.toggleTheme());
-
         // Window resize
         window.addEventListener('resize', () => this.setupCanvas());
-    }
-
-    // Theme Management
-    initTheme() {
-        const savedTheme = localStorage.getItem('theme');
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-        if (savedTheme) {
-            document.documentElement.setAttribute('data-theme', savedTheme);
-        } else if (prefersDark) {
-            document.documentElement.setAttribute('data-theme', 'dark');
-        } else {
-            document.documentElement.setAttribute('data-theme', 'light');
-        }
-    }
-
-    toggleTheme() {
-        const currentTheme = document.documentElement.getAttribute('data-theme');
-        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-        document.documentElement.setAttribute('data-theme', newTheme);
-        localStorage.setItem('theme', newTheme);
     }
 
     // Game Controls
@@ -198,7 +174,7 @@ class SnakeGame {
     startGame() {
         this.gameState = 'playing';
         this.score = 0;
-        this.gameSpeed = 100; // Reset to initial speed
+        this.gameSpeed = this.isMobile ? 120 : 180; // 重置初始速度
         this.direction = { x: 1, y: 0 };
         this.nextDirection = { x: 1, y: 0 };
 
@@ -286,8 +262,8 @@ class SnakeGame {
             this.updateScoreDisplay();
             this.generateFood();
 
-            // Increase speed slightly
-            this.gameSpeed = Math.max(50, this.gameSpeed - 1);
+            // Increase speed slightly - 更温和的加速
+            this.gameSpeed = Math.max(this.isMobile ? 60 : 80, this.gameSpeed - 2);
         } else {
             this.snake.pop();
         }
@@ -305,51 +281,33 @@ class SnakeGame {
         this.food = newFood;
     }
 
-    // Rendering
+    // Rendering - 优化版本，移除网格
     draw() {
         // Get CSS variables for colors
         const style = getComputedStyle(document.documentElement);
         const bgColor = style.getPropertyValue('--bg-canvas').trim();
         const snakeColor = style.getPropertyValue('--snake-color').trim();
         const foodColor = style.getPropertyValue('--food-color').trim();
-        const gridColor = style.getPropertyValue('--grid-color').trim();
 
-        // Clear canvas
+        // Clear canvas - 一次性填充背景
         this.ctx.fillStyle = bgColor;
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Draw subtle grid
-        this.ctx.strokeStyle = gridColor;
-        this.ctx.lineWidth = 1;
-        for (let i = 0; i <= this.tileCount; i++) {
-            this.ctx.beginPath();
-            this.ctx.moveTo(i * this.tileSize, 0);
-            this.ctx.lineTo(i * this.tileSize, this.canvas.height);
-            this.ctx.stroke();
-
-            this.ctx.beginPath();
-            this.ctx.moveTo(0, i * this.tileSize);
-            this.ctx.lineTo(this.canvas.width, i * this.tileSize);
-            this.ctx.stroke();
-        }
-
-        // Draw snake
+        // Draw snake - 批量绘制
+        this.ctx.fillStyle = snakeColor;
         this.snake.forEach((segment, index) => {
             const x = segment.x * this.tileSize;
             const y = segment.y * this.tileSize;
             const size = this.tileSize - 2;
-            const radius = 6;
 
-            this.ctx.fillStyle = snakeColor;
-            this.ctx.globalAlpha = index === 0 ? 1 : 0.85 - (index * 0.01);
-
-            this.roundRect(x + 1, y + 1, size, size, radius);
-            this.ctx.fill();
+            // 简化透明度计算
+            this.ctx.globalAlpha = Math.max(0.7, 1 - (index * 0.015));
+            this.ctx.fillRect(x + 1, y + 1, size, size);
         });
 
         this.ctx.globalAlpha = 1;
 
-        // Draw food
+        // Draw food - 圆形食物
         const foodX = this.food.x * this.tileSize;
         const foodY = this.food.y * this.tileSize;
         const foodSize = this.tileSize - 4;
@@ -366,32 +324,17 @@ class SnakeGame {
         this.ctx.fill();
     }
 
-    roundRect(x, y, width, height, radius) {
-        this.ctx.beginPath();
-        this.ctx.moveTo(x + radius, y);
-        this.ctx.lineTo(x + width - radius, y);
-        this.ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-        this.ctx.lineTo(x + width, y + height - radius);
-        this.ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-        this.ctx.lineTo(x + radius, y + height);
-        this.ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-        this.ctx.lineTo(x, y + radius);
-        this.ctx.quadraticCurveTo(x, y, x + radius, y);
-        this.ctx.closePath();
-    }
-
-    // Game Loop
+    // Game Loop - 优化版本
     gameLoop(currentTime) {
         window.requestAnimationFrame((time) => this.gameLoop(time));
 
         const deltaTime = currentTime - this.lastFrameTime;
 
+        // 游戏逻辑更新
         if (deltaTime >= this.gameSpeed) {
             this.update();
-            this.draw();
             this.lastFrameTime = currentTime;
-        } else {
-            this.draw();
+            this.draw(); // 只在逻辑更新后重绘
         }
     }
 
