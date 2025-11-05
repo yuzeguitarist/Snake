@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>贪吃蛇 - Snake</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <h1>Snake</h1>
+            <button class="theme-toggle" aria-label="切换主题">
+                <svg class="sun-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <circle cx="10" cy="10" r="4" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M10 2V3M10 17V18M18 10H17M3 10H2M15.66 4.34L14.95 5.05M5.05 14.95L4.34 15.66M15.66 15.66L14.95 14.95M5.05 5.05L4.34 4.34" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+                <svg class="moon-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M17 10.5C16.8 14.5 13.5 17.8 9.5 18C5.5 18.2 2 14.9 2 11C2 7.4 4.7 4.4 8.2 4C8.1 4.3 8 4.6 8 5C8 7.2 9.8 9 12 9C12.4 9 12.7 8.9 13 8.8C13.6 11.6 15.6 13.9 17 10.5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+        </header>
+
+        <!-- Game Info -->
+        <div class="game-info">
+            <div class="score-container">
+                <span class="label">分数</span>
+                <span class="score">0</span>
+            </div>
+            <div class="high-score-container">
+                <span class="label">最高</span>
+                <span class="high-score">0</span>
+            </div>
+        </div>
+
+        <!-- Game Canvas -->
+        <div class="game-wrapper">
+            <canvas id="gameCanvas"></canvas>
+            <div class="game-overlay" id="gameOverlay">
+                <div class="overlay-content">
+                    <h2 id="overlayTitle">贪吃蛇</h2>
+                    <p id="overlayMessage">按空格键或点击开始</p>
+                    <button class="start-button" id="startButton">开始游戏</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls Info -->
+        <div class="controls-info">
+            <div class="control-item">
+                <span class="key">方向键</span>
+                <span class="description">移动</span>
+            </div>
+            <div class="control-item">
+                <span class="key">空格</span>
+                <span class="description">暂停</span>
+            </div>
+            <div class="control-item mobile-only">
+                <span class="key">滑动</span>
+                <span class="description">移动</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
