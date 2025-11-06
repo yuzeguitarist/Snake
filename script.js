@@ -26,15 +26,21 @@ class SnakeGame {
         this.score = 0;
         this.highScore = this.loadHighScore();
 
-        // Game speed - 降低PC端速度
+        // Game speed - 降低移动端速度以改善体验
         this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        this.gameSpeed = this.isMobile ? 100 : 150; // 更流畅的速度
+        this.gameSpeed = this.isMobile ? 130 : 150; // 移动端更慢，更好控制
         this.lastFrameTime = 0;
         this.accumulatedTime = 0;
 
-        // Touch controls
+        // Touch controls - 优化触摸响应
         this.touchStartX = 0;
         this.touchStartY = 0;
+        this.minSwipeDistance = 20; // 降低滑动阈值，减少延时
+
+        // Mystery Mode - 神秘模式
+        this.mysteryMode = false;
+        this.specialNumber = null; // 当前特殊数字 {value: 13, x: 0, y: 0}
+        this.specialNumberActive = false;
 
         // UI elements
         this.scoreElement = document.querySelector('.score');
@@ -43,6 +49,7 @@ class SnakeGame {
         this.overlayTitle = document.getElementById('overlayTitle');
         this.overlayMessage = document.getElementById('overlayMessage');
         this.startButton = document.getElementById('startButton');
+        this.mysteryToggle = document.getElementById('mysteryModeToggle');
 
         this.init();
     }
@@ -77,9 +84,25 @@ class SnakeGame {
         // Start button
         this.startButton.addEventListener('click', () => this.startGame());
 
-        // Touch controls
+        // Mystery Mode Toggle
+        this.mysteryToggle.addEventListener('change', (e) => {
+            this.mysteryMode = e.target.checked;
+            // 清除特殊数字状态，防止软锁定
+            this.specialNumber = null;
+            this.specialNumberActive = false;
+            // 重置游戏如果正在玩或暂停
+            if (this.gameState === 'playing' || this.gameState === 'paused') {
+                this.gameOver();
+            }
+        });
+
+        // Touch controls - 优化触摸响应
         this.canvas.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: false });
         this.canvas.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
+        this.canvas.addEventListener('touchend', () => {
+            this.touchStartX = 0;
+            this.touchStartY = 0;
+        }, { passive: false });
 
         // 禁用双击缩放
         let lastTouchEnd = 0;
@@ -168,25 +191,26 @@ class SnakeGame {
         const touch = e.touches[0];
         const deltaX = touch.clientX - this.touchStartX;
         const deltaY = touch.clientY - this.touchStartY;
+        const minDist = this.minSwipeDistance; // 使用更小的阈值，减少延迟
 
         if (Math.abs(deltaX) > Math.abs(deltaY)) {
             // Horizontal swipe
-            if (deltaX > 30 && this.direction.x === 0) {
+            if (deltaX > minDist && this.direction.x === 0) {
                 this.nextDirection = { x: 1, y: 0 };
                 this.touchStartX = touch.clientX;
                 this.touchStartY = touch.clientY;
-            } else if (deltaX < -30 && this.direction.x === 0) {
+            } else if (deltaX < -minDist && this.direction.x === 0) {
                 this.nextDirection = { x: -1, y: 0 };
                 this.touchStartX = touch.clientX;
                 this.touchStartY = touch.clientY;
             }
         } else {
             // Vertical swipe
-            if (deltaY > 30 && this.direction.y === 0) {
+            if (deltaY > minDist && this.direction.y === 0) {
                 this.nextDirection = { x: 0, y: 1 };
                 this.touchStartX = touch.clientX;
                 this.touchStartY = touch.clientY;
-            } else if (deltaY < -30 && this.direction.y === 0) {
+            } else if (deltaY < -minDist && this.direction.y === 0) {
                 this.nextDirection = { x: 0, y: -1 };
                 this.touchStartX = touch.clientX;
                 this.touchStartY = touch.clientY;
@@ -198,9 +222,13 @@ class SnakeGame {
     startGame() {
         this.gameState = 'playing';
         this.score = 0;
-        this.gameSpeed = this.isMobile ? 100 : 150; // 重置初始速度
+        this.gameSpeed = this.isMobile ? 130 : 150; // 重置初始速度，移动端更慢
         this.direction = { x: 1, y: 0 };
         this.nextDirection = { x: 1, y: 0 };
+
+        // 重置神秘模式状态
+        this.specialNumber = null;
+        this.specialNumberActive = false;
 
         // Initialize snake in the middle
         const mid = Math.floor(this.tileCount / 2);
@@ -280,6 +308,23 @@ class SnakeGame {
 
         this.snake.unshift(head);
 
+        // 神秘模式：检查特殊数字碰撞
+        if (this.mysteryMode && this.specialNumber) {
+            if (head.x === this.specialNumber.x && head.y === this.specialNumber.y) {
+                // 吃到特殊数字
+                this.score = this.specialNumber.value;
+                this.updateScoreDisplay();
+                // 清除特殊数字实体和标志
+                this.specialNumber = null;
+                this.specialNumberActive = false;
+                // 不增加长度，移除尾部
+                this.snake.pop();
+                // 重新生成食物
+                this.generateFood();
+                return;
+            }
+        }
+
         // Check food collision
         if (head.x === this.food.x && head.y === this.food.y) {
             this.score += 10;
@@ -287,10 +332,81 @@ class SnakeGame {
             this.generateFood();
 
             // Increase speed slightly - 更温和的加速
-            this.gameSpeed = Math.max(this.isMobile ? 60 : 80, this.gameSpeed - 2);
+            this.gameSpeed = Math.max(this.isMobile ? 70 : 80, this.gameSpeed - 2);
+
+            // 神秘模式：检查是否需要生成特殊数字
+            if (this.mysteryMode) {
+                this.checkSpecialNumberTrigger();
+            }
         } else {
             this.snake.pop();
         }
+    }
+
+    // 检查是否需要触发特殊数字
+    checkSpecialNumberTrigger() {
+        // 如果已经有特殊数字在棋盘上，检查是否超出范围需要清除
+        if (this.specialNumberActive) {
+            // 检查是否通过吃普通食物超出了生成范围，如果是则清除特殊数字
+            const specialValue = this.specialNumber ? this.specialNumber.value : 0;
+            let shouldClear = false;
+
+            if (specialValue === 13 && this.score >= 50) {
+                shouldClear = true;
+            } else if (specialValue === 69 && this.score >= 70) {
+                shouldClear = true;
+            } else if (specialValue === 78 && this.score >= 79) {
+                shouldClear = true;
+            } else if (specialValue === 91 && this.score >= 100) {
+                shouldClear = true;
+            }
+
+            if (shouldClear) {
+                this.specialNumber = null;
+                this.specialNumberActive = false;
+            }
+            return; // 已有特殊数字时不再生成新的
+        }
+
+        // 没有特殊数字时，检查是否需要生成（只在第一次进入范围时生成）
+        if (this.score === 10) {
+            this.generateSpecialNumber(13);
+        } else if (this.score >= 50 && this.score < 70) {
+            // 在50-69范围内第一次吃食物时生成
+            this.generateSpecialNumber(69);
+        } else if (this.score >= 70 && this.score < 79) {
+            this.generateSpecialNumber(78);
+        } else if (this.score >= 79 && this.score < 100) {
+            this.generateSpecialNumber(91);
+        }
+    }
+
+    // 生成特殊数字
+    generateSpecialNumber(value) {
+        let position;
+        let attempts = 0;
+        const maxAttempts = 100;
+
+        do {
+            position = {
+                x: Math.floor(Math.random() * this.tileCount),
+                y: Math.floor(Math.random() * this.tileCount)
+            };
+            attempts++;
+        } while (
+            attempts < maxAttempts &&
+            (this.snake.some(segment => segment.x === position.x && segment.y === position.y) ||
+            (position.x === this.food.x && position.y === this.food.y))
+        );
+
+        this.specialNumber = {
+            value: value,
+            x: position.x,
+            y: position.y
+        };
+
+        // 唯一设置 specialNumberActive 的地方
+        this.specialNumberActive = true;
     }
 
     generateFood() {
@@ -322,28 +438,23 @@ class SnakeGame {
     }
     
     generatePositionWithEdgeProbability() {
-        // 定义安全区域：离边至少3格
-        const safeZoneStart = 3;
-        const safeZoneEnd = this.tileCount - 3;
+        // 定义安全区域：离边至少4格
+        const safeZoneStart = 4;
+        const safeZoneEnd = this.tileCount - 4;
         const safeZoneSize = safeZoneEnd - safeZoneStart;
-        
-        // 80%概率在安全区域（离边3格以上）
-        if (Math.random() < 0.80) {
+
+        // 90%概率在安全区域（离边4格以上）
+        if (Math.random() < 0.90) {
             return Math.floor(Math.random() * safeZoneSize) + safeZoneStart;
         }
-        
-        // 15%概率在次安全区域（离边2-3格）
-        if (Math.random() < 0.75) { // 15/20 = 0.75
-            const side = Math.random() < 0.5 ? 0 : 1;
-            if (side === 0) {
-                return Math.random() < 0.5 ? 2 : this.tileCount - 3;
-            } else {
-                return Math.random() < 0.5 ? 2 : this.tileCount - 3;
-            }
+
+        // 8%概率在次安全区域（离边3格）
+        if (Math.random() < 0.80) { // 8/10 = 0.80
+            return Math.random() < 0.5 ? 3 : this.tileCount - 4;
         }
-        
-        // 5%概率在边缘（离边1格）- 但永远不贴边
-        return Math.random() < 0.5 ? 1 : this.tileCount - 2;
+
+        // 2%概率在边缘区域（离边2格）- 减少靠边概率
+        return Math.random() < 0.5 ? 2 : this.tileCount - 3;
     }
 
     // Rendering - 优化版本，高清渲染
@@ -361,7 +472,7 @@ class SnakeGame {
         // Draw snake - 连续的身体
         this.ctx.fillStyle = snakeColor;
         this.ctx.globalAlpha = 1;
-        
+
         this.snake.forEach((segment, index) => {
             const x = segment.x * this.tileSize;
             const y = segment.y * this.tileSize;
@@ -370,13 +481,13 @@ class SnakeGame {
 
             // 绘制蛇身体方块
             this.ctx.fillRect(x + padding, y + padding, size, size);
-            
+
             // 连接相邻的身体部分
             if (index < this.snake.length - 1) {
                 const nextSegment = this.snake[index + 1];
                 const dx = nextSegment.x - segment.x;
                 const dy = nextSegment.y - segment.y;
-                
+
                 // 填充连接处
                 if (dx !== 0) {
                     const connX = dx > 0 ? x + size + padding : x - padding;
@@ -388,14 +499,47 @@ class SnakeGame {
             }
         });
 
-        // Draw food - 正方形食物，高清渲染
-        const foodX = this.food.x * this.tileSize;
-        const foodY = this.food.y * this.tileSize;
-        const foodPadding = 2;
-        const foodSize = this.tileSize - foodPadding * 2;
+        // Draw special number (神秘模式特殊数字)
+        if (this.mysteryMode && this.specialNumber && !this.specialNumberActive) {
+            const numX = this.specialNumber.x * this.tileSize;
+            const numY = this.specialNumber.y * this.tileSize;
 
-        this.ctx.fillStyle = foodColor;
-        this.ctx.fillRect(foodX + foodPadding, foodY + foodPadding, foodSize, foodSize);
+            // 绘制发光背景
+            const gradient = this.ctx.createRadialGradient(
+                numX + this.tileSize / 2,
+                numY + this.tileSize / 2,
+                0,
+                numX + this.tileSize / 2,
+                numY + this.tileSize / 2,
+                this.tileSize / 2
+            );
+            gradient.addColorStop(0, 'rgba(255, 215, 0, 0.8)');
+            gradient.addColorStop(1, 'rgba(255, 215, 0, 0.2)');
+            this.ctx.fillStyle = gradient;
+            this.ctx.fillRect(numX, numY, this.tileSize, this.tileSize);
+
+            // 绘制数字
+            this.ctx.fillStyle = '#FFD700'; // 金色
+            this.ctx.font = `bold ${this.tileSize * 0.6}px Arial`;
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText(
+                this.specialNumber.value,
+                numX + this.tileSize / 2,
+                numY + this.tileSize / 2
+            );
+        }
+
+        // Draw food - 正方形食物，高清渲染
+        if (!this.specialNumber || this.specialNumberActive) {
+            const foodX = this.food.x * this.tileSize;
+            const foodY = this.food.y * this.tileSize;
+            const foodPadding = 2;
+            const foodSize = this.tileSize - foodPadding * 2;
+
+            this.ctx.fillStyle = foodColor;
+            this.ctx.fillRect(foodX + foodPadding, foodY + foodPadding, foodSize, foodSize);
+        }
     }
 
     // Game Loop - 优化版本，固定时间步长
