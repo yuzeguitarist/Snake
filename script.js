@@ -500,7 +500,7 @@ class SnakeGame {
         });
 
         // Draw special number (神秘模式特殊数字)
-        if (this.mysteryMode && this.specialNumber && !this.specialNumberActive) {
+        if (this.mysteryMode && this.specialNumber && this.specialNumberActive) {
             const numX = this.specialNumber.x * this.tileSize;
             const numY = this.specialNumber.y * this.tileSize;
 
@@ -531,7 +531,7 @@ class SnakeGame {
         }
 
         // Draw food - 正方形食物，高清渲染
-        if (!this.specialNumber || this.specialNumberActive) {
+        if (!this.specialNumber || !this.specialNumberActive) {
             const foodX = this.food.x * this.tileSize;
             const foodY = this.food.y * this.tileSize;
             const foodPadding = 2;
