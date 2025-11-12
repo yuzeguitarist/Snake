@@ -503,31 +503,40 @@ class SnakeGame {
         if (this.mysteryMode && this.specialNumber && this.specialNumberActive) {
             const numX = this.specialNumber.x * this.tileSize;
             const numY = this.specialNumber.y * this.tileSize;
+            const centerX = numX + this.tileSize / 2;
+            const centerY = numY + this.tileSize / 2;
 
-            // 绘制发光背景
+            // 绘制发光背景 - 更强的对比度
             const gradient = this.ctx.createRadialGradient(
-                numX + this.tileSize / 2,
-                numY + this.tileSize / 2,
-                0,
-                numX + this.tileSize / 2,
-                numY + this.tileSize / 2,
-                this.tileSize / 2
+                centerX, centerY, 0,
+                centerX, centerY, this.tileSize * 0.7
             );
-            gradient.addColorStop(0, 'rgba(255, 215, 0, 0.8)');
-            gradient.addColorStop(1, 'rgba(255, 215, 0, 0.2)');
+            gradient.addColorStop(0, 'rgba(255, 215, 0, 0.95)');
+            gradient.addColorStop(0.6, 'rgba(255, 165, 0, 0.6)');
+            gradient.addColorStop(1, 'rgba(255, 140, 0, 0.2)');
             this.ctx.fillStyle = gradient;
             this.ctx.fillRect(numX, numY, this.tileSize, this.tileSize);
 
-            // 绘制数字
-            this.ctx.fillStyle = '#FFD700'; // 金色
-            this.ctx.font = `bold ${this.tileSize * 0.6}px Arial`;
+            // 绘制数字 - 更大更清晰
+            this.ctx.save();
+
+            // 添加阴影效果增强可读性
+            this.ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+            this.ctx.shadowBlur = 4;
+            this.ctx.shadowOffsetX = 2;
+            this.ctx.shadowOffsetY = 2;
+
+            this.ctx.fillStyle = '#FFFFFF'; // 白色文字
+            this.ctx.font = `900 ${this.tileSize * 0.75}px Arial, sans-serif`;
             this.ctx.textAlign = 'center';
             this.ctx.textBaseline = 'middle';
             this.ctx.fillText(
                 this.specialNumber.value,
-                numX + this.tileSize / 2,
-                numY + this.tileSize / 2
+                centerX,
+                centerY
             );
+
+            this.ctx.restore();
         }
 
         // Draw food - 正方形食物，高清渲染
